@@ -117,10 +117,37 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## 📚 Documentation
+
+Complete API and integration documentation is available in the **[DOCS](./DOCS/)** folder:
+
+- **[📖 Documentation Index](./DOCS/README.md)** - Start here for all documentation
+- **[� API Authentication Endpoints](./DOCS/API_AUTH_ENDPOINTS.md)** - Complete API reference
+- **[🔄 Authentication Flow](./DOCS/AUTHENTICATION_FLOW.md)** - Visual diagrams and flow
+- **[⚡ Next.js Integration](./DOCS/NEXTJS_INTEGRATION.md)** - Frontend integration guide
+- **[🧪 Testing Guide](./DOCS/TESTING_AUTH.md)** - How to test endpoints
+
+### Quick Links
+
+**For Backend Developers:**
+```bash
+# Start server
+python manage.py runserver
+# Access Swagger UI: http://127.0.0.1:8000/api/docs/
+```
+
+**For Frontend Developers:**
+- View [Next.js Integration Guide](./DOCS/NEXTJS_INTEGRATION.md)
+- API Base URL: `http://127.0.0.1:8000/api`
+- Sync Endpoint: `POST /api/auth/sync/` (call after Supabase auth)
+
+**Interactive API Docs:**
+- Swagger UI: http://127.0.0.1:8000/api/docs/
+- OpenAPI Schema: http://127.0.0.1:8000/api/schema/
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
 
 ## Contact
 
