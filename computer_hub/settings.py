@@ -38,9 +38,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third party apps
     "corsheaders",
     "rest_framework",
-    "users", 
+    "django_filters",
+    "drf_spectacular",
+    # Project apps
+    "core",
+    "users",
+    "academics",
+    "courses",
 ]
 
 MIDDLEWARE = [
@@ -50,6 +57,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "users.middleware.SupabaseAuthenticationMiddleware",  # Supabase JWT authentication
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -77,12 +85,30 @@ WSGI_APPLICATION = "computer_hub.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Use SQLite for local development, PostgreSQL for production
+if config("USE_SQLITE", default=False, cast=bool):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    # Supabase PostgreSQL configuration
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("SUPABASE_DB_NAME"),
+            "USER": config("SUPABASE_DB_USER"),
+            "PASSWORD": config("SUPABASE_DB_PASSWORD"),
+            "HOST": config("SUPABASE_DB_HOST"),
+            "PORT": config("SUPABASE_DB_PORT", default="5432"),
+            "OPTIONS": {
+                "sslmode": "require",
+                "connect_timeout": 10,
+            },
+        }
+    }
 
 
 # Password validation
@@ -120,3 +146,57 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Custom user model
+AUTH_USER_MODEL = "users.User"
+
+# Supabase configuration (aligned with official Python docs)
+SUPABASE_URL = config("SUPABASE_URL")
+# Support both new publishable key and legacy anon key
+SUPABASE_PUBLISHABLE_KEY = config("SUPABASE_PUBLISHABLE_KEY", default=None)
+SUPABASE_ANON_KEY = config("SUPABASE_ANON_KEY", default=None)
+SUPABASE_KEY = SUPABASE_ANON_KEY or config("SUPABASE_KEY", default="")  # Backward compatibility
+SUPABASE_JWT_SECRET = config("SUPABASE_JWT_SECRET", default="your-jwt-secret-from-supabase-settings")
+
+# REST Framework configuration
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [],  # Using custom Supabase middleware
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
+    ],
+}
+
+# API Documentation (drf-spectacular)
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Computer Students Hub API",
+    "DESCRIPTION": "REST API for Computer Students Hub platform",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+}
+
+# CORS settings (adjust for production)
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="").split(",")
