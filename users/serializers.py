@@ -9,8 +9,8 @@ class RoleSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Role
-        fields = ['name', 'display_name', 'description', 'permissions']
-        read_only_fields = ['name']
+        fields = ['id', 'name', 'display_name', 'description', 'permissions']
+        read_only_fields = ['id', 'name']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -40,14 +40,15 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'display_name',
-            'created_at', 'roles'
+            'id', 'supabase_id', 'email', 'display_name',
+            'is_active', 'last_login', 'created_at', 'roles'
         ]
-        read_only_fields = ['id', 'email', 'created_at', 'roles']
+        read_only_fields = ['id', 'supabase_id', 'email', 'is_active', 'last_login', 'created_at', 'roles']
     
-    def get_roles(self, obj: User) -> List[str]:
-        """Get list of role names"""
-        return obj.get_roles()
+    def get_roles(self, obj: User) -> List[dict]:
+        """Get list of role objects"""
+        roles = obj.user_roles.select_related('role').all()
+        return RoleSerializer([assignment.role for assignment in roles], many=True).data
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -71,9 +72,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'last_login', 'created_at', 'updated_at'
         ]
     
-    def get_roles(self, obj: User) -> List[str]:
-        """Get list of role names"""
-        return obj.get_roles()
+    def get_roles(self, obj: User) -> List[dict]:
+        """Get list of role objects"""
+        roles = obj.user_roles.select_related('role').all()
+        return RoleSerializer([assignment.role for assignment in roles], many=True).data
 
 
 class UserRoleAssignmentSerializer(serializers.ModelSerializer):
