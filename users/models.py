@@ -163,6 +163,11 @@ class User(UUIDModel, AbstractBaseUser, SoftDeleteModel):
         return f"{self.display_name} ({self.email})"
     
     @property
+    def is_authenticated(self) -> bool:
+        """Always return True for real user instances"""
+        return True
+    
+    @property
     def is_staff(self) -> bool:
         """Required for Django admin - admins can access admin panel"""
         return self.has_role(UserRole.ADMIN.value)

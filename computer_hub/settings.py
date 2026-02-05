@@ -56,8 +56,8 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "users.middleware.SupabaseAuthenticationMiddleware",  # Supabase JWT authentication
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Runs first, creates lazy user
+    "users.middleware.SupabaseAuthenticationMiddleware",  # Runs after, overrides lazy user's wrapped value
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -162,10 +162,14 @@ SUPABASE_PUBLISHABLE_KEY = config("SUPABASE_PUBLISHABLE_KEY", default=None)
 SUPABASE_ANON_KEY = config("SUPABASE_ANON_KEY", default=None)
 SUPABASE_KEY = SUPABASE_ANON_KEY or config("SUPABASE_KEY", default="")  # Backward compatibility
 SUPABASE_JWT_SECRET = config("SUPABASE_JWT_SECRET", default="your-jwt-secret-from-supabase-settings")
+# Service role key for admin operations (keep secret, never expose to frontend)
+SUPABASE_SERVICE_KEY = config("SUPABASE_SERVICE_KEY", default=None)
 
 # REST Framework configuration
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [],  # Using custom Supabase middleware
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "users.authentication.SupabaseJWTAuthentication",  # Use middleware-authenticated user
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
@@ -199,4 +203,37 @@ SPECTACULAR_SETTINGS = {
 
 # CORS settings (adjust for production)
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="").split(",")
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'users.middleware': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}

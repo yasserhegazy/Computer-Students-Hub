@@ -199,6 +199,19 @@ class RoleService:
         RoleService.assign_role(user, UserRole.ADMIN.value, admin)
     
     @staticmethod
+    def get_user_roles(user: User) -> List['Role']:
+        """
+        Get list of Role objects for a user.
+        
+        Args:
+            user: User to get roles for
+            
+        Returns:
+            List of Role objects
+        """
+        return [assignment.role for assignment in user.user_roles.select_related('role').all()]
+    
+    @staticmethod
     def initialize_default_roles() -> None:
         """Initialize default roles in the database"""
         Role.get_or_create_default_roles()
